@@ -144,7 +144,7 @@ Located in `scripts/events/`:
 ## Support
 - **Creator**: Badhon Rahman Shanto
 - **Email**: badhonrohman946@outlook.com
-- **Repository**: https://github.com/Badhon-00/ayanesan-gift.git
+- **Repository**: https://github.com/Badhon-00/MELISSA-BOT-V2-GIFT.git
 
 ---
-*Last Updated: October 3, 2025*
+*Last Updated: October 3, 2026*
