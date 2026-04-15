@@ -1,4 +1,4 @@
-{
+ {
   "facebookAccount": {
     "email": "",
     "password": "",
@@ -12,8 +12,8 @@
   "antiInbox": false,
   "language": "en",
   "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
-  "nickNameBot": "পেতনী  𝐁𝐎𝐓",
-  "prefix": "+",
+  "nickNameBot": "[ ^ ]—͞💜 𝐌𝐄𝐋𝐈𝐒𝐒𝐀 𝐁𝐀𝐁𝐘 𝐁𝐎𝐓",
+  "prefix": "^",
   "api": "https://api.noobs-api.rf.gd/dipto",
   "approval": false,
   "reactBy": {
@@ -23,7 +23,7 @@
     ],
     "kick": [
       "🦶",
-      "⚠️"
+      "⚠"
     ]
   },
   "adminOnly": {
@@ -31,28 +31,38 @@
     "ignoreCommand": []
   },
   "adminBot": [
-       "61567135511735",
-		"",
-		""
+      "",
+	  "",
+	  "",
+	  ""
   ],
-  "mainAdmin": [
-    "61567135511735",
-		"",
-		"61579624827164"
+  "developers": [
+    "",
+    "",
+    ""
+  ],
+  "handlerReaction": {
+    "enable": true,
+    "HandelReactionMain": [
+      "",
+      "",
+      ""
+    ]
+  },
+  "premium": [
+    "",
+    "",
+    "",
+    ""
   ],
   "whiteListMode": {
     "enable": false,
-    "whiteListIds": [
-      "",
-      ""
-    ],
+    "whiteListIds": [],
     "notes": "if you enable this feature, only the ids in the whiteListIds list can use the bot"
   },
   "whiteListModeThread": {
     "enable": false,
-    "whiteListThreadIds": [
-      ""
-    ],
+    "whiteListThreadIds": [],
     "notes": "if you enable this feature, only the thread in the whiteListThreadIds list can use the bot",
     "how_it_work": "if you enable both whiteListMode and whiteListModeThread, the system will check if the user is in whiteListIds, then check if the thread is in whiteListThreadIds, if one of the conditions is true, the user can use the bot"
   },
@@ -72,7 +82,7 @@
       "refreshToken": "1//04cWW09MPjCJ_CgYIARAAGAQSNwF-L9Ire-jJJEWxsxMhSN7TIWIxasWAgO185qwOrVpFwcCVWGhdPknecew-nRUQk9GAnLG7bXw"
     },
     "gRecaptcha": {
-     "siteKey": "",
+      "siteKey": "",
       "secretKey": ""
     }
   },
@@ -167,4 +177,4 @@
     "autoReconnect": false,
     "notes": "Document here: https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md#apisetoptionsoptions "
   }
-  }
+}
