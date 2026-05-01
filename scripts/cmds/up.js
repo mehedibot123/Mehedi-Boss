@@ -16,9 +16,9 @@ function getUptime() {
   const seconds = Math.floor(uptimeSec % 60);
   
   if (days > 0) {
-    return `${days}Day${days > 1 ? 's' : ''} ${hours}Hrs ${minutes}Min ${seconds}Sec`;
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
   }
-  return `${hours}Hrs ${minutes}Min ${seconds}Sec`;
+  return `${hours}h ${minutes}m ${seconds}s`;
 }
 
 function createProgressBar(percentage, length = 10) {
@@ -27,22 +27,13 @@ function createProgressBar(percentage, length = 10) {
   return "█".repeat(filled) + "▒".repeat(empty);
 }
 
-function getCpuInfo() {
-  const cpus = os.cpus();
-  return {
-    model: cpus[0]?.model || "Unknown Processor",
-    cores: cpus.length,
-    speed: `${(cpus[0]?.speed / 1000).toFixed(1)} GHz`
-  };
-}
-
 function getNetworkInfo() {
   try {
     const interfaces = os.networkInterfaces();
     for (const interfaceName in interfaces) {
-      for (const interface of interfaces[interfaceName]) {
-        if (interface.family === 'IPv4' && !interface.internal) {
-          return interface.address;
+      for (const iface of interfaces[interfaceName]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          return iface.address;
         }
       }
     }
@@ -52,72 +43,26 @@ function getNetworkInfo() {
   }
 }
 
-function getDiskInfo() {
-  try {
-    let dfOutput;
-    try {
-      dfOutput = execSync("df -k /").toString();
-    } catch (e) {
-      try {
-        dfOutput = execSync("df -k .").toString();
-      } catch (e) {
-        return {
-          used: 0,
-          total: 1024 * 1024 * 1024,
-          bar: createProgressBar(50),
-          percentage: 50
-        };
-      }
-    }
-
-    const lines = dfOutput.trim().split('\n');
-    if (lines.length < 2) {
-      throw new Error("No disk info available");
-    }
-
-    const dataLine = lines[1].split(/\s+/).filter(Boolean);
-    if (dataLine.length < 4) {
-      throw new Error("Invalid disk info format");
-    }
-
-    const used = parseInt(dataLine[2]) * 1024;
-    const total = parseInt(dataLine[1]) * 1024;
-    
-    if (isNaN(used) || isNaN(total) || total === 0) {
-      throw new Error("Invalid disk values");
-    }
-
-    const percentage = Math.round((used / total) * 100);
-    
-    return {
-      used,
-      total,
-      bar: createProgressBar(percentage),
-      percentage: percentage
-    };
-  } catch (error) {
-    return {
-      used: 512 * 1024 * 1024, 
-      total: 1024 * 1024 * 1024, 
-      bar: createProgressBar(50),
-      percentage: 50
-    };
-  }
-}
-
 module.exports = {
   config: {
     name: "uptime",
-    aliases: ["up", "upt", "status"],
+    aliases: ["up", "status"],
     version: "2.0",
-    author: "nexo_here",
-    shortDescription: "Show bot status & system info",
-    longDescription: "Displays comprehensive bot uptime, system specifications, and resource usage statistics.",
-    category: "system",
+    author: "Badhon",
+    countDown: 5,
+    role: 0,
+    category: "System",
     guide: "{pn}"
   },
 
-  onStart: async function ({ message, threadsData, usersData }) {
+  langs: {
+    en: {
+      uptime: "『 𝐌𝐄𝐋𝐈𝐒𝐒𝐀 𝐔𝐏𝐓𝐈𝐌𝐄 』\n\n『 𝐔𝐏𝐓𝐈𝐌𝐄 』\n✦ %1\n\n『 𝐒𝐓𝐀𝐓𝐒 』\n✦ Users: %2\n✦ Groups: %3\n✦ Threads: %4\n\n『 𝐒𝐘𝐒𝐓𝐄𝐌 』\n✦ OS: %5\n✦ Platform: %6\n✦ Node: %7\n✦ IP: %8\n\n『 𝐂𝐏𝐔 』\n✦ %9\n✦ Cores: %10\n✦ Load: %11\n\n『 𝐑𝐀𝐌 』\n✦ [%12] %13%\n✦ Used: %14\n✦ Free: %15\n✦ Total: %16\n\n『 𝐎𝐖𝐍𝐄𝐑 』\n➤ 𝗕𝗮𝗱𝗵𝗼𝗻",
+      error: "『 𝐄𝐑𝐑𝐎𝐑 』\n\n✦ Could not fetch system info"
+    }
+  },
+
+  onStart: async function ({ message, threadsData, usersData, getLang }) {
     try {
       const uptime = getUptime();
       const threads = await threadsData.getAll();
@@ -126,69 +71,38 @@ module.exports = {
       const totalMem = os.totalmem();
       const freeMem = os.freemem();
       const usedMem = totalMem - freeMem;
-      const memUsage = (usedMem / totalMem) * 100;
-      const cpuInfo = getCpuInfo();
+      const memUsage = ((usedMem / totalMem) * 100).toFixed(1);
+      const cpus = os.cpus();
+      const cpuModel = cpus[0]?.model || "Unknown";
+      const cpuCores = cpus.length;
       const nodeVersion = process.version;
       const platform = os.platform();
-      const hostname = os.hostname();
       const ip = getNetworkInfo();
-      const diskInfo = getDiskInfo();
-      const loadAvg = os.loadavg().map(load => load.toFixed(2)).join(', ');
-      const homeDir = os.homedir();
-      const operator = "BADHON";
-      const botName = "🎀 𝗠𝗘𝗟𝗜𝗦𝗦𝗔 𝗕𝗢𝗧 𝗩𝟯 🎀";
-      const msg = 
-`┌───  ${botName}  ───┐
+      const loadAvg = os.loadavg().map(l => l.toFixed(2)).join(' / ');
 
-├─── 🏃 𝗨𝗣𝗧𝗜𝗠𝗘 ───
-├ ➤ ${uptime}
-├─── 📊 𝗦𝗧𝗔𝗧𝗜𝗦𝗧𝗜𝗖𝗦 ───
-├ ➤ Users: ${users}
-├ ➤ Groups: ${groups}
-├ ➤ Threads: ${threads.length}
-├─── 🖥 𝗦𝗬𝗦𝗧𝗘𝗠 ───
-├ ➤ OS: ${os.type()} ${os.release()}
-├ ➤ Platform: ${platform}
-├ ➤ Host: ${hostname}
-├ ➤ Node: ${nodeVersion}
-├ ➤ IP: ${ip}
-├─── 🔧 𝗣𝗥𝗢𝗖𝗘𝗦𝗦𝗢𝗥 ───
-├ ➤ Model: ${cpuInfo.model}
-├ ➤ Cores: ${cpuInfo.cores}
-├ ➤ Speed: ${cpuInfo.speed}
-├ ➤ Load: ${loadAvg}
-├─── 💾 𝗠𝗘𝗠𝗢𝗥𝗬 ───
-├ ➤ [${createProgressBar(memUsage)}] ${memUsage.toFixed(1)}%
-├ ➤ Used: ${formatBytes(usedMem)}
-├ ➤ Free: ${formatBytes(freeMem)}
-├ ➤ Total: ${formatBytes(totalMem)}
-├─── 🗃 𝗥𝗔𝗠 ───
-├ ➤ [${createProgressBar(memUsage)}] ${memUsage.toFixed(1)}%
-├ ➤ Usage: ${(usedMem / 1024 / 1024 / 1024).toFixed(2)} GB
-├ ➤ Total: ${(totalMem / 1024 / 1024 / 1024).toFixed(2)} GB
-├─── 📀 𝗗𝗜𝗦𝗞 ───
-├ ➤ [${diskInfo.bar}] ${diskInfo.percentage}%
-├ ➤ Usage: ${formatBytes(diskInfo.used)}
-├ ➤ Total: ${formatBytes(diskInfo.total)}
-├─── 🏠 𝗛𝗢𝗠𝗘 & 𝗔𝗥𝗖𝗛 ───
-├ ➤ Directory: ${homeDir}
-├ ➤ Operator: ${operator}
-├ ➤ Architecture: ${os.arch()}
-└───  ${botName}  ───┘`;
-
-      await message.reply(msg);
-
-    } catch (error) {
-      console.error("Uptime command error:", error);
-      const simpleUptime = getUptime();
-      await message.reply(
-`🤖 Bot Status:
-⏰ Uptime: ${simpleUptime}
-💻 Platform: ${os.platform()}
-📊 Memory: ${formatBytes(os.totalmem() - os.freemem())} / ${formatBytes(os.totalmem())}
-👤 Operator: BADHON
-❌ Detailed stats unavailable`
+      const msg = getLang("uptime",
+        uptime,
+        users,
+        groups,
+        threads.length,
+        `${os.type()} ${os.release()}`,
+        platform,
+        nodeVersion,
+        ip,
+        cpuModel,
+        cpuCores,
+        loadAvg,
+        createProgressBar(memUsage),
+        memUsage,
+        formatBytes(usedMem),
+        formatBytes(freeMem),
+        formatBytes(totalMem)
       );
+
+      return message.reply(msg);
+    } catch (error) {
+      console.error("Uptime error:", error);
+      return message.reply(getLang("error"));
     }
   }
 };
