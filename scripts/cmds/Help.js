@@ -1,4 +1,4 @@
- const { getPrefix } = global.utils;
+const { getPrefix } = global.utils;
 const { commands, aliases } = global.GoatBot;
 const axios = require("axios");
 
