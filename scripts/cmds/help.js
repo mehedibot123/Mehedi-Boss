@@ -1,134 +1,147 @@
 const { getPrefix } = global.utils;
 const { commands, aliases } = global.GoatBot;
+const axios = require("axios");
+
+const videoUrl = "https://drive.google.com/uc?export=download&id=1e0QVVWacAv65KXEt6OYMbAAK7anWabsK";
+
+const lastHelpMessage = new Map();
 
 module.exports = {
-        config: {
-                name: "help",
-                version: "1.7",
-                author: "MahMUD",
-                countDown: 5,
-                role: 0,
-                shortDescription: {
-                        en: "View command usage and list all commands",
-                        bn: "কমান্ড ব্যবহারের নিয়ম এবং তালিকা দেখুন",
-                        vi: "Xem cách sử dụng và danh sách lệnh"
-                },
-                longDescription: {
-                        en: "View command usage and list all commands directly",
-                        bn: "কমান্ড ব্যবহারের নিয়ম এবং তালিকা দেখুন",
-                        vi: "Xem cách sử dụng và danh sách lệnh"
-                },
-                category: "info",
-                guide: {
-                        en: "{pn} [command name]",
-                        bn: "{pn} [কমান্ডের নাম]",
-                        vi: "{pn} [tên lệnh]"
-                },
-                priority: 1,
-        },
+	config: {
+		name: "help",
+		version: "1.8",
+		author: "badhon",
+		countDown: 5,
+		role: 0,
+		shortDescription: {
+			en: "View command usage and list all commands"
+		},
+		longDescription: {
+			en: "View command usage and list all commands directly"
+		},
+		category: "info",
+		guide: {
+			en: "{pn} [command name]"
+		},
+		priority: 1,
+	},
 
-        onStart: async function ({ message, args, event, threadsData, role }) {
-                const { threadID } = event;
-                const threadData = await threadsData.get(threadID);
-                const prefix = getPrefix(threadID);
-                const langCode = threadData.data.lang || global.GoatBot.config.language || "en";
+	onStart: async function ({ message, args, event, threadsData, role }) {
+		const { threadID } = event;
+		const prefix = getPrefix(threadID);
 
-                if (args.length === 0) {
-                        const categories = {};
-                        let msg = "";
+		const previous = lastHelpMessage.get(threadID);
+		if (previous) {
+			try {
+				await message.unsend(previous);
+			} catch (error) {
+				console.error("Help Error:", error);
+			}
+			lastHelpMessage.delete(threadID);
+		}
 
-                        for (const [name, value] of commands) {
-                                if (value.config.role > 0 && role < value.config.role) continue;
-                                
-                                const category = value.config.category || "Uncategorized";
-                                categories[category] = categories[category] || { commands: [] };
-                                if (!categories[category].commands.includes(name)) {
-                                        categories[category].commands.push(name);
-                                }
-                        }
+		let attachment;
+		try {
+			const response = await axios.get(videoUrl, { responseType: "stream" });
+			attachment = response.data;
+		} catch (error) {
+			console.error("Help Video Error:", error);
+		}
 
-                        Object.keys(categories).sort().forEach((category) => {
-                                msg += `\n╭─────⭓ ${category.toUpperCase()}`;
-                                const names = categories[category].commands.sort();
-                                for (let i = 0; i < names.length; i += 3) {
-                                        const cmds = names.slice(i, i + 3).map((item) => `✧${item}`);
-                                        msg += `\n│ ${cmds.join("  ")}`;
-                                }
-                                msg += `\n╰────────────⭓\n`;
-                        });
+		if (args.length === 0) {
+			const categories = {};
+			let msg = "";
 
-                        const totalCommands = commands.size;
-                        let helpHint = langCode === "bn" ? `বিস্তারিত দেখতে ${prefix}help <কমান্ড> লিখুন।` : 
-                                       langCode === "vi" ? `Nhập ${prefix}help <lệnh> để xem chi tiết.` : 
-                                       `Type ${prefix}help <cmd> to see details.`;
+			for (const [name, value] of commands) {
+				if (value.config.role > 0 && role < value.config.role) continue;
 
-                        msg += `\n\n⭔ Total Commands: ${totalCommands}\n⭔ ${helpHint}\n`;
-                        msg += `\n╭─✦ ADMIN: MEHEDI-BOSS\n├‣ WHATSAPP\n╰‣ `;
+				const category = value.config.category || "Uncategorized";
+				categories[category] = categories[category] || { commands: [] };
+				if (!categories[category].commands.includes(name)) {
+					categories[category].commands.push(name);
+				}
+			}
 
-                        try {
-                                const hh = await message.reply({ body: msg });
-                                setTimeout(() => message.unsend(hh.messageID), 80000);
-                        } catch (error) {
-                                console.error("Help Error:", error);
-                        }
+			Object.keys(categories).sort().forEach((category) => {
+				msg += `\n╭─────⭓ ${category.toUpperCase()}`;
+				const names = categories[category].commands.sort();
+				for (let i = 0; i < names.length; i += 3) {
+					const cmds = names.slice(i, i + 3).map((item) => `✧${item}`);
+					msg += `\n│ ${cmds.join("  ")}`;
+				}
+				msg += `\n╰────────────⭓\n`;
+			});
 
-                } else {
-                        const commandName = args[0].toLowerCase();
-                        const command = commands.get(commandName) || commands.get(aliases.get(commandName));
+			const totalCommands = commands.size;
+			const helpHint = `Type ${prefix}help <cmd> to see details.`;
 
-                        if (!command) {
-                                const notFound = langCode === "bn" ? `❌ | বেবি, "${commandName}" নামে কোনো কমান্ড নেই!` : 
-                                                 langCode === "vi" ? `❌ | Không tìm thấy lệnh "${commandName}".` : 
-                                                 `❌ | Command "${commandName}" not found.`;
-                                return message.reply(notFound);
-                        }
+			msg += `\n\n⭔ Total Commands: ${totalCommands}\n⭔ ${helpHint}\n`;
+			msg += `\n╭─✦ ADMIN: MEHEDI-BOSS\n├‣ WHATSAPP\n╰‣ `;
 
-                        const config = command.config;
-                        const roleText = roleTextToString(config.role, langCode);
+			try {
+				const body = { body: msg };
+				if (attachment) body.attachment = attachment;
+				const hh = await message.reply(body);
+				lastHelpMessage.set(threadID, hh.messageID);
+				setTimeout(() => {
+					message.unsend(hh.messageID);
+					if (lastHelpMessage.get(threadID) === hh.messageID) {
+						lastHelpMessage.delete(threadID);
+					}
+				}, 60000);
+			} catch (error) {
+				console.error("Help Error:", error);
+			}
 
-                        const labels = {
-                                bn: { name: "নাম", alias: "ডাকনাম", info: "তথ্য", desc: "বর্ণনা", author: "লেখক", guide: "নির্দেশনা", usage: "ভার্সন ও পারমিশন", ver: "ভার্সন", role: "অনুমতি", none: "নেই", unknown: "অজানা" },
-                                vi: { name: "Tên", alias: "Tên khác", info: "Thông tin", desc: "Mô tả", author: "Tác giả", guide: "Hướng dẫn", usage: "Phiên bản & Quyền", ver: "Phiên bản", role: "Quyền hạn", none: "Không có", unknown: "Không xác định" },
-                                en: { name: "NAME", alias: "Aliases", info: "INFO", desc: "Description", author: "Author", guide: "Guide", usage: "Details", ver: "Version", role: "Role", none: "None", unknown: "Unknown" }
-                        };
+		} else {
+			const commandName = args[0].toLowerCase();
+			const command = commands.get(commandName) || commands.get(aliases.get(commandName));
 
-                        const lb = labels[langCode] || labels.en;
-                        const desc = config.description?.[langCode] || config.description?.en || config.longDescription?.[langCode] || config.longDescription?.en || "No description";
-                        const guideBody = config.guide?.[langCode] || config.guide?.en || "";
-                        
-                        const usage = guideBody
-                                .replace(/{pn}/g, prefix + config.name)
-                                .replace(/{p}/g, prefix)
-                                .replace(/{n}/g, config.name);
+			if (!command) {
+				return message.reply(`❌ | Command "${commandName}" not found.`);
+			}
 
-                        const response = `╭─────────⭓\n` +
-                                         `│ 🎀 ${lb.name}: ${config.name}\n` +
-                                         `│ 📃 ${lb.alias}: ${config.aliases ? config.aliases.join(", ") : lb.none}\n` +
-                                         `├──‣ ${lb.info}\n` +
-                                         `│ 📝 ${lb.desc}: ${desc}\n` +
-                                         `│ 👑 ${lb.author}: ${config.author || lb.unknown}\n` +
-                                         `│ 📚 ${lb.guide}: ${usage || prefix + config.name}\n` +
-                                         `├──‣ ${lb.usage}\n` +
-                                         `│ ⭐ ${lb.ver}: ${config.version || "1.0"}\n` +
-                                         `│ ♻️ ${lb.role}: ${roleText}\n` +
-                                         `╰────────────⭓`;
+			const config = command.config;
+			const roleText = roleTextToString(config.role);
 
-                        const helpMessage = await message.reply(response);
-                        setTimeout(() => message.unsend(helpMessage.messageID), 80000);
-                }
-        }
+			const desc = config.description?.en || config.longDescription?.en || "No description";
+			const guideBody = config.guide?.en || "";
+
+			const usage = guideBody
+				.replace(/{pn}/g, prefix + config.name)
+				.replace(/{p}/g, prefix)
+				.replace(/{n}/g, config.name);
+
+			const responseText = `╭─────────⭓\n` +
+				`│ 🎀 NAME: ${config.name}\n` +
+				`│ 📃 Aliases: ${config.aliases ? config.aliases.join(", ") : "None"}\n` +
+				`├──‣ INFO\n` +
+				`│ 📝 Description: ${desc}\n` +
+				`│ 👑 Author: ${config.author || "Unknown"}\n` +
+				`│ 📚 Guide: ${usage || prefix + config.name}\n` +
+				`├──‣ Details\n` +
+				`│ ⭐ Version: ${config.version || "1.0"}\n` +
+				`│ ♻️ Role: ${roleText}\n` +
+				`╰────────────⭓`;
+
+			const body = { body: responseText };
+			if (attachment) body.attachment = attachment;
+			const helpMessage = await message.reply(body);
+			lastHelpMessage.set(threadID, helpMessage.messageID);
+			setTimeout(() => {
+				message.unsend(helpMessage.messageID);
+				if (lastHelpMessage.get(threadID) === helpMessage.messageID) {
+					lastHelpMessage.delete(threadID);
+				}
+			}, 60000);
+		}
+	}
 };
 
-function roleTextToString(role, lang) {
-        const roles = {
-                bn: ["সব ইউজার", "গ্রুপ অ্যাডমিন", "বোট অ্যাডমিন", "ডেভেলপার (Dev)", "ভিআইপি (VIP)", "NSFW ইউজার"],
-                en: ["All users", "Group Admin", "Bot Admin", "Developer", "VIP User", "NSFW User"],
-                vi: ["Tất cả người dùng", "Quản trị viên nhóm", "Admin bot", "Người phát triển", "Người dùng VIP", "Người dùng NSFW"]
-        };
-
-        const r = roles[lang] || roles.en;
-        if (role >= 0 && role <= 5) {
-                return `${role} (${r[role]})`;
-        }
-        return `${role} (Unknown)`;
-}
+function roleTextToString(role) {
+	const roles = ["All users", "Group Admin", "Bot Admin", "Developer", "VIP User", "NSFW User"];
+	if (role >= 0 && role <= 5) {
+		return `${role} (${roles[role]})`;
+	}
+	return `${role} (Unknown)`;
+                }
