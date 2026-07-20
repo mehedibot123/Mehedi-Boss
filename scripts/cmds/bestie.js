@@ -1,16 +1,16 @@
-// brother.js
+// bestie.js
 const fs = require("fs-extra");
 const Canvas = require("canvas");
 
 module.exports = {
   config: {
-    name: "brother",
-    aliases: ["bro", "buddy"],
-    version: "1.0.0",
+    name: "bestie",
+    aliases: ["friend", "buddy"],
+    version: "7.3.8",
     author: "Rahad",
     countDown: 5,
     role: 0,
-    shortDescription: "Brother edit with template",
+    shortDescription: "Bestie edit with template",
     longDescription: "Put user profile pictures exactly on placeholders in background",
     category: "funny",
     guide: "{pn} @tag"
@@ -22,7 +22,7 @@ module.exports = {
       const mentions = Object.keys(event.mentions || {});
       const id2 = mentions[0];
       if (!id2) {
-        return api.sendMessage("❌ | কেউ ট্যাগ করো!", event.threadID, event.messageID);
+        return api.sendMessage("❌ | Please mention someone!", event.threadID, event.messageID);
       }
 
       // Load avatars
@@ -34,7 +34,7 @@ module.exports = {
       );
 
       // Load background
-      const background = await Canvas.loadImage("https://i.imgur.com/n2FGJFe.jpg");
+      const background = await Canvas.loadImage("https://i.imgur.com/RloX16v.jpg");
 
       // Create canvas
       const canvas = Canvas.createCanvas(background.width, background.height);
@@ -43,7 +43,7 @@ module.exports = {
       // Draw background
       ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-      // Avatar coordinates (same as before)
+      // === Coordinates (same as jimp version) ===
       const left = { x: 93, y: 111, size: 191 };
       const right = { x: 434, y: 107, size: 190 };
 
@@ -66,14 +66,14 @@ module.exports = {
       ctx.restore();
 
       // Save & send
-      const path = __dirname + "/cache/brother.png";
+      const path = __dirname + "/cache/bestie.png";
       const out = fs.createWriteStream(path);
       const stream = canvas.createPNGStream();
       stream.pipe(out);
       out.on("finish", () => {
         api.sendMessage(
           {
-            body: "✧•❁𝐵𝐫𝑜𝐭𝐡𝐞𝐫❁•✧\n\n╔═══❖••° °••❖═══╗\n\n   ✅ 𝐏𝐚𝐢𝐫𝐢𝐧𝐠 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥\n\n╚═══❖••° °••❖═══╝\n\n✶⊶⊷⊷❍⊶⊷⊷✶\n\n    👑 𝐤𝐨𝐫𝐥𝐚 𝐛𝐡𝐫𝐨𝐭𝐡𝐞𝐫 💞\n\n✶⊶⊷⊷❍⊶⊷⊷✶",
+            body: "✧•❁𝐅𝐫𝐢𝐞𝐧𝐝𝐬𝐡𝐢𝐩❁•✧\n\n╔═══❖••° °••❖═══╗\n\n   𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥 𝐁𝐞𝐬𝐭𝐢𝐞 𝐄𝐝𝐢𝐭\n\n╚═══❖••° °••❖═══╝\n\n   ✶⊶⊷⊷❍⊶⊷⊷✶\n\n    🤏💨 𝐍𝐞 𝐃𝐡𝐨𝐫 𝐓𝐨𝐫 𝐁𝐞𝐬𝐭𝐢𝐞 💞\n\n   ✶⊶⊷⊷❍⊶⊷⊷✶",
             attachment: fs.createReadStream(path)
           },
           event.threadID,
@@ -83,7 +83,7 @@ module.exports = {
       });
     } catch (err) {
       console.error(err);
-      api.sendMessage("❌ | কোনো সমস্যা হয়েছে!", event.threadID, event.messageID);
+      api.sendMessage("❌ | Something went wrong!", event.threadID, event.messageID);
     }
   }
 };
