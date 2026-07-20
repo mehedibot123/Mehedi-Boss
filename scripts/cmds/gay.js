@@ -1,98 +1,116 @@
-const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
-
-const baseApiUrl = async () => {
-        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
-        return base.data.mahmud;
-};
+const DIG = require("discord-image-generation");
+const fs = require("fs-extra");
 
 module.exports = {
-        config: {
-                name: "gay",
-                version: "1.7",
-                author: "MahMUD",
-                countDown: 10,
-                role: 0,
-                description: {
-                        bn: "কাউকে গে (Gay) ইফেক্ট দিন",
-                        en: "Give someone a gay effect",
-                        vi: "Tạo hiệu ứng gay cho ai đó"
-                },
-                category: "fun",
-                guide: {
-                        bn: '   {pn} <@tag>: কাউকে ট্যাগ করে গে ইফেক্ট দিন'
-                                + '\n   {pn} <uid>: UID দিয়ে ইফেক্ট তৈরি করুন'
-                                + '\n   (অথবা মেসেজে রিপ্লাই দিয়ে ব্যবহার করুন)',
-                        en: '   {pn} <@tag>: Give gay effect by tagging'
-                                + '\n   {pn} <uid>: Create effect using UID'
-                                + '\n   (Or use by replying to a message)',
-                        vi: '   {pn} <@tag>: Tạo hiệu ứng gay bằng cách gắn thẻ'
-                                + '\n   {pn} <uid>: Tạo hiệu ứng bằng UID'
-                                + '\n   (Hoặc phản hồi tin nhắn)'
-                }
-        },
+	config: {
+		name: "gay",
+		version: "1.0",
+		author: "@tas33n",
+		countDown: 1,
+		role: 0,
+		shortDescription: "find gay",
+		longDescription: "",
+		category: "box chat",
+		guide: "{pn} {{[on | off]}}",
+		envConfig: {
+			deltaNext: 5
+		}
+	},
 
-        langs: {
-                bn: {
-                        noTarget: "× বেবি, কাউকে মেনশন দাও, রিপ্লাই করো অথবা UID দাও! 🐸",
-                        success: "𝐄𝐟𝐟𝐞𝐜𝐭 𝐠𝐚𝐲 𝐬𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥 🐸",
-                        error: "× ইফেক্ট তৈরি করতে সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
-                },
-                en: {
-                        noTarget: "× Baby, mention, reply, or provide UID of the target! 🐸",
-                        success: "𝐄𝐟𝐟𝐞𝐜𝐭 𝐠𝐚𝐲 𝐬𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥 🐸",
-                        error: "× Failed to create effect: %1. Contact MahMUD for help."
-                },
-                vi: {
-                        noTarget: "× Cưng ơi, hãy gắn thẻ, phản hồi hoặc cung cấp UID mục tiêu! 🐸",
-                        success: "Hiệu ứng gay thành công 🐸",
-                        error: "× Lỗi tạo hiệu ứng: %1. Liên hệ MahMUD để hỗ trợ."
-                }
-        },
+	langs: {
+		vi: {
+			noTag: "Bạn phải tag người bạn muốn tát"
+		},
+		en: {
+			noTag: "You must tag the person you want to "
+		}
+	},
 
-        onStart: async function ({ api, event, args, message, getLang }) {
-                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
-                if (this.config.author !== authorName) {
-                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
-                }
+	onStart: async function ({ event, message, usersData, args, getLang }) 
+	{
 
-                const { mentions, messageReply } = event;
-                let id2;
+		let mention = Object.keys(event.mentions)
+		let uid;
 
-                if (messageReply) {
-                        id2 = messageReply.senderID;
-                } else if (Object.keys(mentions).length > 0) {
-                        id2 = Object.keys(mentions)[0];
-                } else if (args[0] && !isNaN(args[0])) {
-                        id2 = args[0];
-                }
+		// const img = await new DIG.Gay().getImage(url);
 
-                if (!id2) return message.reply(getLang("noTarget"));
 
-                const cacheDir = path.join(__dirname, "cache");
-                const filePath = path.join(cacheDir, `gay_${id2}.png`);
+		if(event.type == "message_reply"){
+		uid = event.messageReply.senderID
+		} else{
+			if (mention[0]){
+				uid = mention[0]
+			}else{
+				console.log(" jsjsj")
+				uid = event.senderID}
+		}
 
-                try {
-                        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
+let url = await usersData.getAvatarUrl(uid)
+let avt = await new DIG.Gay().getImage(url)
 
-                        const baseUrl = await baseApiUrl();
-                        const url = `${baseUrl}/api/dig?type=gay&user=${id2}`;
 
-                        const response = await axios.get(url, { responseType: "arraybuffer" });
-                        fs.writeFileSync(filePath, Buffer.from(response.data));
+	// 	message.reply({
+	// 		body:"",
+	// 		attachment: await global.utils.getStreamFromURL(avt)
+	// })
+			const pathSave = `${__dirname}/tmp/gay.png`;
+	fs.writeFileSync(pathSave, Buffer.from(avt));
+		let body = "look.... i found a gay"
+		if(!mention[0]) body="Baka you gay\nforgot to reply or mention someone"
+		message.reply({body:body,
+attachment: fs.createReadStream(pathSave)
+		}, () => fs.unlinkSync(pathSave));
 
-                        return message.reply({
-                                body: getLang("success"),
-                                attachment: fs.createReadStream(filePath)
-                        }, () => {
-                                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-                        });
 
-                } catch (err) {
-                        console.error("Gay Effect Error:", err);
-                        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-                        return message.reply(getLang("error", err.message));
-                }
-        }
+	}
 };
+
+
+
+
+
+
+
+
+
+// 	onStart: async function ({ message, event, usersData, threadsData, args }) {
+
+
+
+
+// 		if(event.type == "message_reply"){
+//       avt = await usersData.getAvatarUrl(event.messageReply.senderID)
+//     } else{
+//       if (!uid2){avt =  await usersData.getAvatarUrl(uid1)
+//               } else{avt = await usersData.getAvatarUrl(uid2)}}
+
+
+// 		message.reply({body:"Look.... I found a gay",
+// attachment: fs.createReadStream(pathSave)
+// 		}, () => fs.unlinkSync(pathSave));
+
+
+
+
+
+// message.send({body:"Look.... I found a gay",
+// attachment: fs.createReadStream(pathSave)
+// 		}, () => fs.unlinkSync(pathSave));
+
+// st fs = require("fs-extra");
+// let url = await usersData.getAvatarUrl(event.messageReply.senderID)
+// // const img = await new DIG.Gay().getImage(url);
+		// const pathSave = `${__dirname}/tmp/gay.png`;
+		// fs.writeFileSync(pathSave, Buffer.from(avt));
+
+// // message.send({body:"Look.... I found a gay",
+// // attachment: fs.createReadStream(pathSave)
+// // 		}, () => fs.unlinkSync(pathSave));
+
+
+// 	}
+
+
+
+
+// }

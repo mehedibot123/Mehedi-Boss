@@ -1,73 +1,58 @@
-const axios = require("axios");
-
-const mahmud = async () => {
-        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/exe/main/baseApiUrl.json");
-        return base.data.mahmud;
-};
+const moment = require('moment');
 
 module.exports = {
-        config: {
-                name: "age",
-                aliases: ["বয়স"],
-                version: "1.7",
-                author: "MahMUD",
-                countDown: 5,
-                role: 0,
-                description: {
-                        bn: "আপনার জন্ম তারিখ দিয়ে বর্তমান বয়স ক্যালকুলেট করুন",
-                        en: "Calculate your current age using date of birth",
-                        vi: "Tính tuổi hiện tại của bạn bằng ngày sinh"
-                },
-                category: "utility",
-                guide: {
-                        bn: '   {pn} <YYYY-MM-DD>: (যেমন: {pn} 2002-05-15)',
-                        en: '   {pn} <YYYY-MM-DD>: (Ex: {pn} 2002-05-15)',
-                        vi: '   {pn} <YYYY-MM-DD>: (VD: {pn} 2002-05-15)'
-                }
-        },
+  config: {
+    name: "age",
+    aliases: ["agecalc", "boyosh"],
+    version: "1.2",
+    author: "YourName",
+    countDown: 5,
+    role: 0,
+    shortDescription: {
+      en: "Calculate age accurately from birth date"
+    },
+    longDescription: {
+      en: "Gives accurate age in years, months, and days using your birth date"
+    },
+    category: "Utility",
+    guide: {
+      en: "{pn} YYYY-MM-DD"
+    }
+  },
 
-        langs: {
-                bn: {
-                        noInput: "× বেবি, তোমার জন্ম তারিখ দাও!\n\nউদাহরণ: {pn} 2002-05-15",
-                        error: "× সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
-                },
-                en: {
-                        noInput: "× Baby, please provide your date of birth\n\nExample: {pn} 2002-05-15",
-                        error: "× API error: %1. Contact MahMUD for help."
-                },
-                vi: {
-                        noInput: "× Cưng ơi, vui lòng cung cấp ngày sinh\n\nVí dụ: {pn} 2002-05-15",
-                        error: "× Lỗi: %1. Liên hệ MahMUD để hỗ trợ."
-                }
-        },
+  onStart: async function ({ message, args }) {
+    if (args.length === 0) {
+      return message.reply("⚠️ *Please provide your birth date!*\n\n📝 Example:\n`age 2005-08-15`");
+    }
 
-        onStart: async function ({ api, event, args, message, getLang }) {
-                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
-                if (this.config.author !== authorName) {
-                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
-                }
+    const birthDate = moment(args[0], "YYYY-MM-DD", true);
+    if (!birthDate.isValid()) {
+      return message.reply("❌ *Invalid date format!*\nUse: `YYYY-MM-DD`\nExample: `2005-08-15`");
+    }
 
-                const dob = args[0];
-                if (!dob) return message.reply(getLang("noInput"));
+    const now = moment();
+    const years = now.diff(birthDate, 'years');
+    const months = now.diff(birthDate.clone().add(years, 'years'), 'months');
+    const days = now.diff(birthDate.clone().add(years, 'years').add(months, 'months'), 'days');
 
-                try {
-                        api.setMessageReaction("⏳", event.messageID, () => {}, true);
-                        
-                        const apiBase = await mahmud();
-                        const res = await axios.get(`${apiBase}/api/age/font3?dob=${dob}`);
+    const ageMessage = `
+╔═══❖•ೋ° °ೋ•❖═══╗
+  🔢 𝘼𝙂𝙀 𝘾𝘼𝙇𝘾𝙐𝙇𝘼𝙏𝙊𝙍  
+╚═══❖•ೋ° °ೋ•❖═══╝
 
-                        if (res.data && res.data.error) {
-                                return message.reply(res.data.error);
-                        }
+📆 𝗕𝗶𝗿𝘁𝗵 𝗗𝗮𝘁𝗲: ${birthDate.format("LL")}
+🕒 𝗧𝗼𝗱𝗮𝘆: ${now.format("LL")}
 
-                        api.setMessageReaction("✅", event.messageID, () => {}, true);
-                        return message.reply(res.data.message);
+🧮 𝗧𝘂𝗺𝗮𝗿 𝗯𝗼𝘆𝗼𝘀𝗵: 
+⇨ ${years} 𝘆𝗲𝗮𝗿𝘀  
+⇨ ${months} 𝗺𝗼𝗻𝘁𝗵𝘀  
+⇨ ${days} 𝗱𝗮𝘆𝘀
 
-                } catch (err) {
-                        console.error("Age Error:", err);
-                        api.setMessageReaction("❌", event.messageID, () => {}, true);
-                        const errorMsg = err.response?.data?.error || err.message;
-                        return message.reply(getLang("error", errorMsg));
-                }
-        }
+╭─────────────╮
+│ 💡 Accurate calendar-based age
+╰─────────────╯
+`;
+
+    return message.reply(ageMessage);
+  }
 };

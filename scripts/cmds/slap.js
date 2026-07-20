@@ -1,89 +1,59 @@
+// slap fixed version
+const Canvas = require("canvas");
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const baseApiUrl = async () => {
-  const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
-  return base.data.mahmud;
-};
-
 module.exports = {
-        config: {
-                name: "slap",
-                aliases: ["thappor"],
-                version: "1.7",
-                author: "MahMUD",
-                countDown: 10,
-                role: 0,
-                description: {
-                        bn: "কাউকে থাপ্পড় মারার ছবি তৈরি করুন",
-                        en: "Create a slap image of someone"
-                },
-                category: "fun",
-                guide: {
-                        bn: '   {pn} <@tag>: কাউকে ট্যাগ করে থাপ্পড় মারুন'
-                                + '\n   {pn} <uid>: UID এর মাধ্যমে থাপ্পড় মারুন'
-                                + '\n   (অথবা কারো মেসেজে রিপ্লাই দিয়ে এটি ব্যবহার করুন)',
-                        en: '   {pn} <@tag>: Slap a tagged user'
-                                + '\n   {pn} <uid>: Slap by UID'
-                                + '\n   (Or reply to someone\'s message)'
-                }
-        },
+  config: {
+    name: "slap",
+    version: "1.0",
+    author: "Badhon (Fixed)",
+    role: 0,
+    category: "funny",
+    guide: "{pn} @mention"
+  },
 
-        langs: {
-                bn: {
-                        noTarget: "× বেবি, কাকে থাপ্পড় মারবে তাকে মেনশন দাও বা রিপ্লাই করো!",
-                        success: "এই নাও থাপ্পড়! একদম গাল লাল হয়ে গেছে 💥",
-                        error: "× থাপ্পড় মারতে গিয়ে সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
-                },
-                en: {
-                        noTarget: "× Baby, mention or reply to someone to slap!",
-                        success: "Here's a slap! 💥",
-                        error: "× Failed to slap: %1. Contact MahMUD for help."
-                }
-        },
+  onStart: async ({ event, api, usersData }) => {
+    const mention = Object.keys(event.mentions || {});
+    if (!mention[0])
+      return api.sendMessage("❌ Mention someone!", event.threadID);
 
-        onStart: async function ({ api, message, args, event, getLang }) {
-                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
-                if (this.config.author !== authorName) {
-                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
-                }
+    try {
+      const uid1 = event.senderID;
+      const uid2 = mention[0];
 
-                const { senderID, messageReply, mentions } = event;
-                let id2;
+      const getAvatar = async (uid) => {
+        const url = await usersData.getAvatarUrl(uid);
+        const res = await axios.get(url, { responseType: "arraybuffer" });
+        return Canvas.loadImage(res.data);
+      };
 
-                if (messageReply) {
-                        id2 = messageReply.senderID;
-                } else if (Object.keys(mentions).length > 0) {
-                        id2 = Object.keys(mentions)[0];
-                } else if (args[0] && !isNaN(args[0])) {
-                        id2 = args[0];
-                }
+      const bg = await Canvas.loadImage(
+        "https://i.imgur.com/fYxZQkK.png"
+      );
 
-                if (!id2) return message.reply(getLang("noTarget"));
+      const av1 = await getAvatar(uid1);
+      const av2 = await getAvatar(uid2);
 
-                try {
-                        const baseUrl = await baseApiUrl();
-                        const url = `${baseUrl}/api/dig?type=slap&user=${senderID}&user2=${id2}`;
+      const canvas = Canvas.createCanvas(bg.width, bg.height);
+      const ctx = canvas.getContext("2d");
 
-                        const response = await axios.get(url, { responseType: "arraybuffer" });
-                        const cachePath = path.join(__dirname, "cache", `slap_${id2}.png`);
-                        
-                        if (!fs.existsSync(path.join(__dirname, "cache"))) {
-                                fs.mkdirSync(path.join(__dirname, "cache"));
-                        }
+      ctx.drawImage(bg, 0, 0);
+      ctx.drawImage(av1, 50, 200, 180, 180);
+      ctx.drawImage(av2, 350, 30, 180, 180);
 
-                        fs.writeFileSync(cachePath, Buffer.from(response.data));
+      const out = path.join(__dirname, "tmp", "slap.png");
+      fs.writeFileSync(out, canvas.toBuffer());
 
-                        await message.reply({
-                                body: getLang("success"),
-                                attachment: fs.createReadStream(cachePath)
-                        });
-
-                        fs.unlinkSync(cachePath);
-                } catch (err) {
-                        console.error("Error in slap command:", err);
-                        return message.reply(getLang("error", err.message));
-                }
-        }
+      api.sendMessage(
+        { body: "👋 Boppp!", attachment: fs.createReadStream(out) },
+        event.threadID,
+        () => fs.unlinkSync(out)
+      );
+    } catch (e) {
+      console.error(e);
+      api.sendMessage("❌ Failed to generate slap", event.threadID);
+    }
+  }
 };

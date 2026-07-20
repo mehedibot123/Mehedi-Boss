@@ -1,94 +1,89 @@
-const fs = require("fs");
-const axios = require("axios");
-const path = require("path");
-
-const baseApiUrl = async () => {
-        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
-        return base.data.mahmud;
-};
+// brother.js
+const fs = require("fs-extra");
+const Canvas = require("canvas");
 
 module.exports = {
-        config: {
-                name: "brother",
-                aliases: ["bro", "ভাই"],
-                version: "1.7",
-                author: "MahMUD",
-                countDown: 5,
-                role: 0,
-                description: {
-                        bn: "ভাই-বোনের মিষ্টি সম্পর্কের একটি ছবি তৈরি করুন",
-                        en: "Create a sweet brother-sister relationship image",
-                        vi: "Tạo hình ảnh tình cảm anh chị em ngọt ngào"
-                },
-                category: "love",
-                guide: {
-                        bn: '   {pn} <@tag/reply>: কাউকে ট্যাগ অথবা রিপ্লাই দিন',
-                        en: '   {pn} <@tag/reply>: Tag or reply to someone',
-                        vi: '   {pn} <@tag/reply>: Gắn thẻ hoặc phản hồi ai đó'
-                }
-        },
+  config: {
+    name: "brother",
+    aliases: ["bro", "buddy"],
+    version: "1.0.0",
+    author: "Rahad",
+    countDown: 5,
+    role: 0,
+    shortDescription: "Brother edit with template",
+    longDescription: "Put user profile pictures exactly on placeholders in background",
+    category: "funny",
+    guide: "{pn} @tag"
+  },
 
-        langs: {
-                bn: {
-                        noTarget: "× বেবি, একজনকে ট্যাগ করো অথবা রিপ্লাই দাও! 🎀",
-                        wait: "⌛ তোমার ছবিটি তৈরি করছি... একটু অপেক্ষা করো বেবি! <😘",
-                        success: "𝐋𝐢𝐟𝐞'𝐬 𝐛𝐞𝐭𝐭𝐞𝐫 𝐰𝐢𝐭𝐡 𝐚 𝐁𝐫𝐨𝐭𝐡𝐞𝐫 𝐛𝐲 𝐲𝐨𝐮𝐫 𝐬𝐢𝐝𝐞 🎀",
-                        error: "× সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
-                },
-                en: {
-                        noTarget: "× Baby, please tag or reply to someone! 🎀",
-                        wait: "⌛ Generating your image... Please wait a moment baby! <😘",
-                        success: "𝐋𝐢𝐟𝐞'𝐬 𝐛𝐞𝐭𝐭𝐞𝐫 𝐰𝐢𝐭𝐡 𝐚 𝐁𝐫𝐨𝐭𝐡𝐞𝐫 𝐛𝐲 𝐲𝐨𝐮𝐫 𝐬𝐢𝐝𝐞 🎀",
-                        error: "× API error: %1. Contact MahMUD for help."
-                },
-                vi: {
-                        noTarget: "× Cưng ơi, hãy gắn thẻ hoặc phản hồi ai đó! 🎀",
-                        wait: "⌛ Đang tạo hình ảnh cho cưng... Chờ chút nhé! <😘",
-                        success: "𝐂𝐮𝐨̣̂𝐜 𝐬𝐨̂́𝐧𝐠 𝐭𝐨̂́𝐭 đ𝐞̣𝐩 𝐡𝐨̛𝐧 𝐤𝐡𝐢 𝐜𝐨́ 𝐚𝐧𝐡 𝐞𝐦 𝐛𝐞̂𝐧 𝐜𝐚̣𝐧𝐡 🎀",
-                        error: "× Lỗi: %1. Liên hệ MahMUD để hỗ trợ."
-                }
-        },
+  onStart: async function ({ event, api }) {
+    try {
+      const id1 = event.senderID;
+      const mentions = Object.keys(event.mentions || {});
+      const id2 = mentions[0];
+      if (!id2) {
+        return api.sendMessage("❌ | কেউ ট্যাগ করো!", event.threadID, event.messageID);
+      }
 
-        onStart: async function ({ api, event, args, message, getLang }) {
-                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
-                if (this.config.author !== authorName) {
-                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
-                }
+      // Load avatars
+      const avatar1 = await Canvas.loadImage(
+        `https://graph.facebook.com/${id1}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`
+      );
+      const avatar2 = await Canvas.loadImage(
+        `https://graph.facebook.com/${id2}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`
+      );
 
-                const mention = Object.keys(event.mentions)[0] || (event.messageReply && event.messageReply.senderID);
-                if (!mention) return message.reply(getLang("noTarget"));
+      // Load background
+      const background = await Canvas.loadImage("https://i.imgur.com/n2FGJFe.jpg");
 
-                const user1 = mention;
-                const user2 = event.senderID;
-                const cacheDir = path.join(__dirname, "cache");
-                if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
-                const imgPath = path.join(cacheDir, `brother_${user1}_${user2}.png`);
+      // Create canvas
+      const canvas = Canvas.createCanvas(background.width, background.height);
+      const ctx = canvas.getContext("2d");
 
-                try {
-                        api.setMessageReaction("🎀", event.messageID, () => {}, true);
-                        const waitMsg = await message.reply(getLang("wait"));
+      // Draw background
+      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-                        const baseUrl = await baseApiUrl();
-                        const apiUrl = `${baseUrl}/api/bro&sis?user1=${user1}&user2=${user2}&style=1`;
+      // Avatar coordinates (same as before)
+      const left = { x: 93, y: 111, size: 191 };
+      const right = { x: 434, y: 107, size: 190 };
 
-                        const response = await axios.get(apiUrl, { responseType: "arraybuffer" });
-                        fs.writeFileSync(imgPath, Buffer.from(response.data));
+      // Draw left avatar
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(left.x + left.size / 2, left.y + left.size / 2, left.size / 2, 0, Math.PI * 2, true);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(avatar1, left.x, left.y, left.size, left.size);
+      ctx.restore();
 
-                        if (waitMsg?.messageID) api.unsendMessage(waitMsg.messageID);
+      // Draw right avatar
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(right.x + right.size / 2, right.y + right.size / 2, right.size / 2, 0, Math.PI * 2, true);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(avatar2, right.x, right.y, right.size, right.size);
+      ctx.restore();
 
-                        return message.reply({
-                                body: getLang("success"),
-                                attachment: fs.createReadStream(imgPath)
-                        }, () => {
-                                api.setMessageReaction("✅", event.messageID, () => {}, true);
-                                if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-                        });
-
-                } catch (err) {
-                        console.error("Brother Error:", err);
-                        api.setMessageReaction("❌", event.messageID, () => {}, true);
-                        if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-                        return message.reply(getLang("error", err.message));
-                }
-        }
+      // Save & send
+      const path = __dirname + "/cache/brother.png";
+      const out = fs.createWriteStream(path);
+      const stream = canvas.createPNGStream();
+      stream.pipe(out);
+      out.on("finish", () => {
+        api.sendMessage(
+          {
+            body: "✧•❁𝐵𝐫𝑜𝐭𝐡𝐞𝐫❁•✧\n\n╔═══❖••° °••❖═══╗\n\n   ✅ 𝐏𝐚𝐢𝐫𝐢𝐧𝐠 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥\n\n╚═══❖••° °••❖═══╝\n\n✶⊶⊷⊷❍⊶⊷⊷✶\n\n    👑 𝐤𝐨𝐫𝐥𝐚 𝐛𝐡𝐫𝐨𝐭𝐡𝐞𝐫 💞\n\n✶⊶⊷⊷❍⊶⊷⊷✶",
+            attachment: fs.createReadStream(path)
+          },
+          event.threadID,
+          () => fs.unlinkSync(path),
+          event.messageID
+        );
+      });
+    } catch (err) {
+      console.error(err);
+      api.sendMessage("❌ | কোনো সমস্যা হয়েছে!", event.threadID, event.messageID);
+    }
+  }
 };
