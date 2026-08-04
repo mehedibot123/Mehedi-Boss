@@ -76,7 +76,7 @@ module.exports = {
 			const helpHint = `Type ${prefix}help <cmd> to see details.`;
 
 			msg += `\n\n⭔ Total Commands: ${totalCommands}\n⭔ ${helpHint}\n`;
-			msg += `\n╭─✦ ADMIN: MEHEDI-BOSS\n├‣ WHATSAPP\n╰‣ `;
+			msg += `\n╭─✦ OWNER: MEHEDI-BOSS\n├‣ WHATSAPP\n╰‣MEHEDI SAITO `;
 
 			try {
 				const body = { body: msg };
